@@ -12,6 +12,15 @@ from pydantic import BaseModel
 
 from article_generation.integration.content_manager import ContentManager
 
+# Define base directory for generated content
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ARTICLES_DIR = os.path.join(BASE_DIR, "generated_articles")
+IMAGES_DIR = os.path.join(BASE_DIR, "generated_images")
+
+# Create necessary directories
+os.makedirs(ARTICLES_DIR, exist_ok=True)
+os.makedirs(IMAGES_DIR, exist_ok=True)
+
 app = FastAPI(
     title="Article Generation API",
     description="API for generating SEO-optimized articles with AI-generated images",
@@ -21,8 +30,8 @@ app = FastAPI(
 )
 
 # Mount the static directories
-app.mount("/articles", StaticFiles(directory="generated_articles"), name="articles")
-app.mount("/images", StaticFiles(directory="generated_images"), name="images")
+app.mount("/articles", StaticFiles(directory=ARTICLES_DIR), name="articles")
+app.mount("/images", StaticFiles(directory=IMAGES_DIR), name="images")
 
 class GenerateRequest(BaseModel):
     topic: str
@@ -43,10 +52,6 @@ async def root():
 async def generate_content(request: GenerateRequest) -> dict:
     """Generate an article with images based on the given topic and keywords."""
     try:
-        # Ensure directories exist
-        os.makedirs("generated_articles", exist_ok=True)
-        os.makedirs("generated_images", exist_ok=True)
-        
         content_manager = ContentManager()
         content = await content_manager.generate_content(
             topic=request.topic,
