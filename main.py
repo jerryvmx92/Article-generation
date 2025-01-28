@@ -5,6 +5,7 @@ import traceback
 from typing import List
 import os
 from dotenv import load_dotenv
+import urllib.parse
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse, FileResponse, PlainTextResponse
@@ -49,6 +50,8 @@ class GenerateRequest(BaseModel):
 class GenerateResponse(BaseModel):
     article_path: str
     images_path: str
+    article_content: str
+    images_content: str
 
 @app.get("/")
 async def root():
@@ -68,10 +71,27 @@ async def generate_content(request: GenerateRequest) -> dict:
         )
         paths = content_manager.save_content(content)
         
+        # Read the generated files
+        try:
+            with open(paths['article_path'], 'r', encoding='utf-8') as f:
+                article_content = f.read()
+            with open(paths['images_path'], 'r', encoding='utf-8') as f:
+                images_content = f.read()
+        except Exception as e:
+            article_content = ""
+            images_content = ""
+            print(f"Error reading files: {str(e)}")
+        
         # Convert local paths to URLs using environment-based base URL
+        # Use URL-safe filenames
+        article_filename = urllib.parse.quote(os.path.basename(paths['article_path']))
+        images_filename = urllib.parse.quote(os.path.basename(paths['images_path']))
+        
         response = {
-            "article_path": f"{BASE_URL}/articles/{os.path.basename(paths['article_path'])}",
-            "images_path": f"{BASE_URL}/images/{os.path.basename(paths['images_path'])}"
+            "article_path": f"{BASE_URL}/articles/{article_filename}",
+            "images_path": f"{BASE_URL}/images/{images_filename}",
+            "article_content": article_content,
+            "images_content": images_content
         }
         return response
     except Exception as e:
