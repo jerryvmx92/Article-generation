@@ -1,0 +1,31 @@
+[project]
+name = "article-generation"
+version = "0.1.0"
+description = "SEO-optimized article generation system using LLM and image generation"
+authors = []
+readme = "README.md"
+requires-python = ">=3.9.6"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.dependencies]
+python = "^3.9.6"
+anthropic = "^0.7.0"
+python-dotenv = "^1.0.0"
+fastapi = "^0.109.0"
+uvicorn = "^0.25.0"
+pydantic = "^2.5.3"
+requests = "^2.31.0"
+python-multipart = "^0.0.6"
+pillow = "^10.2.0"
+beautifulsoup4 = "^4.12.3"
+markdown = "^3.5.2"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.4"
+black = "^23.12.1"
+isort = "^5.13.2"
+flake8 = "^7.0.0"
+mypy = "^1.8.0"
