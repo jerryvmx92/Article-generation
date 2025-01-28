@@ -4,6 +4,7 @@ import asyncio
 import traceback
 from typing import List
 import os
+from dotenv import load_dotenv
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse, FileResponse, PlainTextResponse
@@ -12,10 +13,16 @@ from pydantic import BaseModel
 
 from article_generation.integration.content_manager import ContentManager
 
+# Load environment variables
+load_dotenv()
+
 # Define base directory for generated content
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ARTICLES_DIR = os.path.join(BASE_DIR, "generated_articles")
 IMAGES_DIR = os.path.join(BASE_DIR, "generated_images")
+
+# Get base URL from environment variable or use default
+BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
 
 # Create necessary directories
 os.makedirs(ARTICLES_DIR, exist_ok=True)
@@ -61,11 +68,10 @@ async def generate_content(request: GenerateRequest) -> dict:
         )
         paths = content_manager.save_content(content)
         
-        # Convert local paths to URLs
-        base_url = "https://article-generation-22zt.onrender.com"
+        # Convert local paths to URLs using environment-based base URL
         response = {
-            "article_path": f"{base_url}/articles/{os.path.basename(paths['article_path'])}",
-            "images_path": f"{base_url}/images/{os.path.basename(paths['images_path'])}"
+            "article_path": f"{BASE_URL}/articles/{os.path.basename(paths['article_path'])}",
+            "images_path": f"{BASE_URL}/images/{os.path.basename(paths['images_path'])}"
         }
         return response
     except Exception as e:
