@@ -8,4 +8,5 @@ python-multipart==0.0.6
 pillow==10.2.0
 beautifulsoup4==4.12.3
 markdown==3.5.2
-urllib3==1.26.18 
+urllib3==1.26.18
+fal-client==0.7.0 
