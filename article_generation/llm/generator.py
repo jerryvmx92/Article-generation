@@ -26,13 +26,23 @@ class ArticleGenerator:
 
     async def generate_article(
         self,
-        topic: str,
+        title: str,
         keywords: List[str],
         min_length: Optional[int] = None,
         max_length: Optional[int] = None,
     ) -> Dict[str, str]:
-        """Generate an SEO-optimized article on the given topic."""
-        prompt = self._create_seo_prompt(topic, keywords, min_length, max_length)
+        """Generate an SEO-optimized article with the given title.
+        
+        Args:
+            title: The exact title to use for the article
+            keywords: List of keywords to include in the article
+            min_length: Minimum word length (optional)
+            max_length: Maximum word length (optional)
+            
+        Returns:
+            Dict containing the article title, content, and keywords
+        """
+        prompt = self._create_seo_prompt(title, keywords, min_length, max_length)
         
         try:
             print("\n=== Making API Request ===")
@@ -62,10 +72,11 @@ class ArticleGenerator:
             content = message.content[0].text if hasattr(message, 'content') else message.completion
             
             return {
-                "title": topic,
+                "title": title,
                 "content": content,
                 "keywords": keywords
             }
+            
         except Exception as e:
             print("\n=== API Error in generate_article ===")
             print(f"Error type: {type(e)}")
@@ -75,20 +86,40 @@ class ArticleGenerator:
                 print(f"Response body: {e.response.text}")
             if hasattr(e, 'request'):
                 print(f"Request details: {e.request}")
-            raise
+            raise e from None
 
     def _create_seo_prompt(
         self,
-        topic: str,
+        title: str,
         keywords: List[str],
         min_length: Optional[int] = None,
         max_length: Optional[int] = None,
     ) -> str:
-        """Create an SEO-optimized prompt for article generation."""
+        """Create an SEO-optimized prompt for article generation.
+        
+        Args:
+            title: The exact title to use for the article
+            keywords: List of keywords to include
+            min_length: Minimum word length (optional)
+            max_length: Maximum word length (optional)
+            
+        Returns:
+            The formatted prompt string
+        """
         min_length = min_length or int(os.getenv("MIN_ARTICLE_LENGTH", "1200"))
         max_length = max_length or int(os.getenv("MAX_ARTICLE_LENGTH", "3000"))
         
-        return f"""Generate a comprehensive, SEO-optimized article about {topic} for a multiservice company based in Coatzacoalcos, Mexico.
+        return f"""IMPORTANT: Generate an SEO-optimized article that MUST follow these EXACT formatting requirements.
+
+The article MUST start with this EXACT title:
+# {title}
+
+Then, it MUST use these EXACT section headers in this EXACT order:
+1. ## Introduction
+2. ## Body Content
+3. ## Conclusion
+
+Any deviation from these exact headers will cause the article to be rejected.
 
 Regional Context:
 - Target audience: Residential and commercial clients in Coatzacoalcos and nearby cities (Minatitlán)
@@ -97,27 +128,37 @@ Regional Context:
 - Reference local industrial infrastructure and petrochemical industry presence
 - Include regional business opportunities and service coverage area
 
-Article Structure:
-1. Introduction:
-   - Hook readers in the first paragraph
-   - Include primary keyword within first 100 words
-   - Establish local context and relevance
-   - Preview main points
+Required Content Structure:
 
-2. Body Content:
-   - Length: Between {min_length} and {max_length} words
-   - Organize with H2 and H3 subheadings
-   - Include these keywords naturally: {', '.join(keywords)}
-   - Use short, scannable paragraphs (2-4 sentences)
-   - Include relevant statistics and data when possible
-   - Address specific regional challenges and solutions
+## Introduction
+- Hook readers in the first paragraph
+- Include primary keyword within first 100 words
+- Establish local context and relevance
+- Preview main points
+- At least 300 words
 
-3. Conclusion:
-   - Summarize key points
-   - Include clear call-to-action
-   - Reinforce local expertise and service value
+## Body Content
+- Length: Between {min_length} and {max_length} words
+- Use H3 subheadings for subsections
+- Include these keywords naturally: {', '.join(keywords)}
+- Use short, scannable paragraphs (2-4 sentences)
+- Include relevant statistics and data when possible
+- Address specific regional challenges and solutions
+- At least 700 words
 
-Format the article in Markdown, using proper heading hierarchy (H1 → H2 → H3).
+## Conclusion
+- Summarize key points
+- Include clear call-to-action
+- Reinforce local expertise and service value
+- At least 200 words
+
+Format Requirements:
+- Use proper markdown formatting
+- The article MUST start with exactly '# {title}'
+- Main sections MUST use exactly '## Introduction', '## Body Content', and '## Conclusion'
+- Use '### ' for subsections
+- Include at least 3 numbered lists
+- Include at least 10 bullet points
 
 Remember to:
 - Maintain a professional yet approachable tone
