@@ -184,7 +184,7 @@ class TestArticleGenerator:
         with patch('anthropic.AsyncAnthropic', return_value=mock_anthropic_client):
             generator = ArticleGenerator()
             result = await generator.generate_article(
-                topic="Test Topic",
+                title="Test Topic",
                 keywords=["test", "keywords"]
             )
 
@@ -203,7 +203,7 @@ class TestArticleGenerator:
             
             for test_case in test_article_data:
                 result = await generator.generate_article(
-                    topic=test_case["topic"],
+                    title=test_case["topic"],
                     keywords=test_case["keywords"]
                 )
                 
@@ -250,7 +250,10 @@ class TestArticleGenerator:
             generator = ArticleGenerator()
             
             with pytest.raises(Exception) as exc_info:
-                await generator.generate_article("Test Topic", ["test"])
+                await generator.generate_article(
+                    title="Test Topic",
+                    keywords=["test"]
+                )
             assert str(exc_info.value) == "API Error"
 
     @pytest.mark.integration
@@ -263,7 +266,7 @@ class TestArticleGenerator:
         """Test integration with live Anthropic API."""
         generator = ArticleGenerator()
         result = await generator.generate_article(
-            topic="Industrial Safety Best Practices",
+            title="Industrial Safety Best Practices",
             keywords=["safety", "industrial", "protocols"]
         )
         
@@ -465,7 +468,7 @@ This is the conclusion."""
 
             # Simple test case
             test_case = {
-                "topic": "Hello World",
+                "title": "Hello World",
                 "keywords": ["test"],
                 "expected_sections": ["Introduction", "Body Content", "Conclusion"],
                 "min_words": 100,
@@ -474,8 +477,8 @@ This is the conclusion."""
 
             # Generate article
             result = await article_generator.generate_article(
-                test_case["topic"],
-                test_case["keywords"],
+                title=test_case["title"],
+                keywords=test_case["keywords"],
                 min_length=test_case["min_words"],
                 max_length=test_case["max_words"]
             )
@@ -523,11 +526,11 @@ This is the conclusion."""
                 ("Brief Overview of Software Testing", ["testing", "quality", "automation"])
             ]
 
-            for topic, keywords in topics:
-                print(f"\nTesting topic: {topic}")
+            for title, keywords in topics:
+                print(f"\nTesting title: {title}")
                 
                 # Generate article
-                result = await article_generator.generate_article(topic, keywords)
+                result = await article_generator.generate_article(title=title, keywords=keywords)
                 content = result["content"]
                 
                 # Debug information
@@ -535,7 +538,7 @@ This is the conclusion."""
                 print(repr(content[:100]))
                 
                 print("\nExpected title:")
-                print(repr(f"# {topic}"))
+                print(repr(f"# {title}"))
                 
                 print("\nGenerated content structure:")
                 print("\n".join(line for line in content.split("\n") if line.startswith("#")))
@@ -543,7 +546,7 @@ This is the conclusion."""
                 # Clean content for consistent comparison
                 content_lines = content.strip().split("\n")
                 first_line = content_lines[0].strip()
-                expected_title = f"# {topic}"
+                expected_title = f"# {title}"
 
                 # Title validation with detailed error message
                 assert first_line == expected_title, (
@@ -602,7 +605,7 @@ This is the conclusion."""
 async def test_generate_article_success(article_generator):
     """Test successful article generation."""
     # Mock data
-    topic = "Test Topic"
+    title = "Test Topic"
     keywords = ["test", "keywords"]
     mock_response = MagicMock()
     mock_response.content = [MagicMock(text="Test article content")]
@@ -615,11 +618,11 @@ async def test_generate_article_success(article_generator):
     article_generator.client.messages = mock_messages
     
     # Call the method
-    result = await article_generator.generate_article(topic, keywords)
+    result = await article_generator.generate_article(title=title, keywords=keywords)
     
     # Verify the result
     assert isinstance(result, dict)
-    assert result["title"] == topic
+    assert result["title"] == title
     assert result["content"] == "Test article content"
     assert result["keywords"] == keywords
     
@@ -634,7 +637,7 @@ async def test_generate_article_success(article_generator):
 async def test_generate_article_error(article_generator):
     """Test article generation with API error."""
     # Mock data
-    topic = "Test Topic"
+    title = "Test Topic"
     keywords = ["test", "keywords"]
     
     # Create a mock messages object that raises an exception
@@ -646,7 +649,7 @@ async def test_generate_article_error(article_generator):
     
     # Verify that the exception is propagated
     with pytest.raises(Exception) as exc_info:
-        await article_generator.generate_article(topic, keywords)
+        await article_generator.generate_article(title=title, keywords=keywords)
     assert str(exc_info.value) == "API Error"
 
 def test_create_seo_prompt(article_generator):
