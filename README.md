@@ -27,6 +27,59 @@ cp .env.example .env
 # Edit .env with your API keys
 ```
 
+## Testing
+
+The project uses pytest for testing. Here are the different ways to run tests:
+
+1. Run all tests:
+```bash
+pytest tests/
+```
+
+2. Run tests with verbose output:
+```bash
+pytest tests/ -v
+```
+
+3. Run specific test categories:
+```bash
+# Run only integration tests
+pytest tests/ -v -m integration
+
+# Run all tests except integration tests
+pytest tests/ -v -m "not integration"
+```
+
+4. Run tests with debug output:
+```bash
+pytest tests/ -v --log-cli-level=DEBUG
+```
+
+### Test Categories
+
+- **Unit Tests**: Test individual components in isolation
+- **Integration Tests**: Test interaction with external APIs (requires valid API keys)
+- **Content Quality Tests**: Validate article structure and content requirements
+
+### Environment Setup for Tests
+
+1. For running integration tests, you need a valid Anthropic API key in your `.env` file:
+```bash
+ANTHROPIC_API_KEY=your_api_key_here
+```
+
+2. Integration tests will be skipped if:
+   - No API key is provided
+   - The API key is set to "test_api_key"
+   - The API key is invalid
+
+3. Test Configuration:
+   - Model: claude-3-opus-20240229
+   - Max Tokens: 4096
+   - Temperature: 0.7
+   - Min Article Length: 1200 words
+   - Max Article Length: 3000 words
+
 ## Usage
 
 1. Start the API server:
