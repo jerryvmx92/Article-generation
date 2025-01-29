@@ -74,37 +74,17 @@ class GenerateRequest(BaseModel):
     num_images: int = Field(default=1, ge=1, description="Number of images to generate")
     aspect_ratio: str = Field(default="16:9", pattern="^[0-9]+:[0-9]+$", description="Image aspect ratio in format width:height")
 
-class ImageMetadata(BaseModel):
-    url: str
-    caption: str
-    alt_text: str
-    aspect_ratio: str
-
-class ArticleSection(BaseModel):
-    heading: str
-    content: str
-    images: Optional[List[ImageMetadata]] = None
-
-class ArticleMetadata(BaseModel):
-    title: str
-    description: str
-    keywords: List[str]
-    author: str = "AI Content Generator"
-    date_generated: datetime = Field(default_factory=datetime.now)
-    reading_time: str
-    language: str = "en"
-
 class Article(BaseModel):
-    metadata: ArticleMetadata
+    title: str
     introduction: str
-    sections: List[ArticleSection]
+    body: str
     conclusion: str
-    raw_markdown: str
-    file_url: str
+    image_url: str
+    article_url: str
+    markdown: str
 
 class GenerateResponse(BaseModel):
     article: Article
-    images_file_url: str
     status: str = "success"
     generation_time: float
 
@@ -122,19 +102,32 @@ async def generate_content(request: GenerateRequest) -> dict:
     logger.debug(f"Request details: {request.dict()}")
     
     start_time = datetime.now()
+    max_retries = 3
+    base_delay = 1  # Base delay in seconds
     
     try:
         content_manager = ContentManager()
         logger.debug("Content manager initialized")
         
-        logger.info("Starting content generation")
-        content = await content_manager.generate_content(
-            topic=request.topic,
-            keywords=request.keywords,
-            num_images=request.num_images,
-            aspect_ratio=request.aspect_ratio,
-        )
-        logger.success("Content generation completed successfully")
+        # Implement retry logic with exponential backoff
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"Starting content generation (attempt {attempt + 1}/{max_retries})")
+                content = await content_manager.generate_content(
+                    topic=request.topic,
+                    keywords=request.keywords,
+                    num_images=request.num_images,
+                    aspect_ratio=request.aspect_ratio,
+                )
+                logger.success("Content generation completed successfully")
+                break
+            except Exception as e:
+                if 'overloaded_error' in str(e) and attempt < max_retries - 1:
+                    delay = base_delay * (2 ** attempt)  # Exponential backoff
+                    logger.warning(f"API overloaded. Retrying in {delay} seconds... (attempt {attempt + 1}/{max_retries})")
+                    await asyncio.sleep(delay)
+                    continue
+                raise  # Re-raise the exception if it's not an overload error or we're out of retries
         
         logger.debug("Saving generated content to files")
         paths = content_manager.save_content(content)
@@ -149,35 +142,33 @@ async def generate_content(request: GenerateRequest) -> dict:
             logger.debug("Successfully read generated files")
         except Exception as e:
             logger.error(f"Error reading generated files: {str(e)}")
-            article_content = ""
-            images_content = ""
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error reading generated files: {str(e)}"
+            )
         
         # Convert local paths to URLs using environment-based base URL
-        # Use URL-safe filenames
         article_filename = urllib.parse.quote(os.path.basename(paths['article_path']))
         images_filename = urllib.parse.quote(os.path.basename(paths['images_path']))
         
-        # Parse the markdown content to create structured article
-        article = parse_markdown_to_article(
+        article_url = f"{BASE_URL}/articles/{article_filename}"
+        image_url = f"{BASE_URL}/images/{images_filename}"
+        
+        # Parse the markdown content
+        article = parse_markdown_to_simple_article(
             markdown_content=article_content,
-            file_url=f"{BASE_URL}/articles/{article_filename}",
-            metadata={
-                "title": request.topic,
-                "keywords": request.keywords,
-                "description": content.get('description', ''),
-                "language": content.get('language', 'en'),
-            }
+            image_url=image_url,
+            article_url=article_url,
+            title=request.topic
         )
         
         response = {
             "article": article,
-            "images_file_url": f"{BASE_URL}/images/{images_filename}",
             "status": "success",
             "generation_time": (datetime.now() - start_time).total_seconds()
         }
         
         logger.info(f"Generation completed for topic: {request.topic}")
-        logger.debug(f"Response URLs: {response['article'].file_url}, {response['images_file_url']}")
         return response
         
     except Exception as e:
@@ -192,68 +183,143 @@ async def generate_content(request: GenerateRequest) -> dict:
             detail=f"An error occurred: {str(e)}\nTraceback: {traceback.format_exc()}"
         )
 
-def parse_markdown_to_article(markdown_content: str, file_url: str, metadata: dict) -> Article:
-    """Parse markdown content into structured Article object."""
+def parse_markdown_to_simple_article(markdown_content: str, image_url: str, article_url: str, title: str) -> Article:
+    """Parse markdown content into a simple article structure."""
     try:
-        # Split content into sections
-        sections = []
-        current_section = None
-        introduction = ""
-        conclusion = ""
+        introduction = []
+        body = []
+        conclusion = []
+        in_conclusion = False
+        in_introduction = False
         
-        lines = markdown_content.split('\n')
-        reading_time = estimate_reading_time(markdown_content)
+        # Remove YAML frontmatter and schema markup
+        content_parts = markdown_content.split('---')
+        if len(content_parts) >= 3:
+            # Get the YAML frontmatter
+            yaml_content = content_parts[1]
+            # Remove schema markup section if present
+            yaml_lines = [line for line in yaml_content.split('\n') 
+                        if not line.strip().startswith('Schema Markup:') 
+                        and not ('"@' in line or '{' in line or '}' in line)]
+            # Reconstruct the frontmatter without schema
+            content_parts[1] = '\n'.join(yaml_lines)
+            # Get the main content
+            main_content = '---'.join(content_parts[2:]).strip()
+        else:
+            main_content = markdown_content.strip()
         
-        for line in lines:
-            if line.startswith('# '):  # Main title, skip
+        # Process content line by line
+        cleaned_lines = []
+        in_code_block = False
+        in_schema_block = False
+        
+        for line in main_content.split('\n'):
+            line = line.strip()
+            
+            # Skip empty lines
+            if not line:
                 continue
-            elif line.startswith('## '):  # Section heading
-                if current_section:
-                    sections.append(current_section)
-                current_section = ArticleSection(
-                    heading=line.replace('## ', '').strip(),
-                    content='',
-                    images=[]
-                )
-            elif current_section is None and line.strip():  # Introduction
-                introduction += line + '\n'
-            elif current_section and line.strip():  # Section content
-                current_section.content += line + '\n'
+                
+            # Check for schema block start/end
+            if 'Schema Markup:' in line or '"@context"' in line:
+                in_schema_block = True
+                continue
+            if in_schema_block and '}' in line:
+                in_schema_block = False
+                continue
+            
+            # Skip if in schema block
+            if in_schema_block:
+                continue
+                
+            # Handle code blocks
+            if line.startswith('```'):
+                in_code_block = not in_code_block
+                continue
+            
+            # Skip if in code block
+            if in_code_block:
+                continue
+                
+            # Skip HTML blocks
+            if any(skip in line for skip in ['<div', '<meta', '</div>']):
+                continue
+                
+            # Skip image suggestions
+            if '[Sugerencia de imagen:' in line or 'Texto alt:' in line:
+                continue
+                
+            # Clean up markdown links that aren't images
+            if '[' in line and ']' in line and not line.startswith('!['):
+                # Keep only the text inside the brackets
+                parts = line.split('[')
+                cleaned_parts = []
+                for part in parts:
+                    if ']' in part:
+                        # Extract text inside brackets and remove the link part
+                        text = part.split(']')[0]
+                        cleaned_parts.append(text)
+                    else:
+                        cleaned_parts.append(part)
+                line = ' '.join(cleaned_parts)
+            
+            cleaned_lines.append(line)
         
-        # Add the last section
-        if current_section:
-            sections.append(current_section)
+        # Parse sections
+        for line in cleaned_lines:
+            if line.startswith('# '):
+                continue
+            elif line.startswith('## '):
+                if 'introducci' in line.lower() or 'introduction' in line.lower():
+                    in_introduction = True
+                    in_conclusion = False
+                elif 'conclusi' in line.lower():
+                    in_conclusion = True
+                    in_introduction = False
+                else:
+                    in_introduction = False
+                    in_conclusion = False
+                    body.append(line)
+            elif line.startswith('### '):
+                # Keep section titles but remove numbers if present
+                if any(c.isdigit() for c in line):
+                    line = '### ' + ''.join(c for c in line[4:] if not c.isdigit()).strip('. ')
+                body.append(line)
+            else:
+                if in_conclusion:
+                    conclusion.append(line)
+                elif in_introduction:
+                    introduction.append(line)
+                else:
+                    body.append(line)
         
-        # If the last section is "Conclusion", move it to conclusion field
-        if sections and sections[-1].heading.lower() == "conclusion":
-            conclusion = sections[-1].content
-            sections = sections[:-1]
+        # Create clean markdown
+        clean_markdown = f"# {title}\n\n"
+        if introduction:
+            clean_markdown += "## Introduction\n\n"
+            clean_markdown += '\n'.join(introduction).strip() + '\n\n'
+        clean_markdown += '\n'.join(body).strip() + '\n\n'
+        if conclusion:
+            clean_markdown += f"## Conclusion\n\n"
+            clean_markdown += '\n'.join(conclusion).strip() + '\n'
         
-        article = Article(
-            metadata=ArticleMetadata(
-                title=metadata['title'],
-                description=metadata['description'],
-                keywords=metadata['keywords'],
-                language=metadata['language'],
-                reading_time=reading_time
-            ),
-            introduction=introduction.strip(),
-            sections=sections,
-            conclusion=conclusion.strip(),
-            raw_markdown=markdown_content,
-            file_url=file_url
+        # Add links to the markdown
+        clean_markdown += f"\n---\n\n"
+        clean_markdown += f"[View Full Article]({article_url}) | [View Images]({image_url})\n"
+        
+        return Article(
+            title=title,
+            introduction='\n'.join(introduction).strip(),
+            body='\n'.join(body).strip(),
+            conclusion='\n'.join(conclusion).strip(),
+            image_url=image_url,
+            article_url=article_url,
+            markdown=clean_markdown
         )
         
-        return article
     except Exception as e:
         logger.error(f"Error parsing markdown to article: {str(e)}")
         raise
-
-def estimate_reading_time(content: str) -> str:
-    """Estimate reading time based on word count."""
-    words = len(content.split())
-    minutes = max(1, round(words / 200))  # Assuming 200 words per minute
-    return f"{minutes} min read"
 
 if __name__ == "__main__":
     logger.info("Starting Article Generation API")
