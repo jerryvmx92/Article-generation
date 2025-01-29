@@ -1,13 +1,13 @@
-anthropic>=0.19.1
+anthropic==0.45.2
 python-dotenv==1.0.0
 fastapi==0.109.0
 uvicorn==0.25.0
-pydantic==2.5.3
+pydantic==2.10.6
 httpx>=0.24.1
 python-multipart==0.0.6
 pillow==10.2.0
 beautifulsoup4==4.12.3
 markdown==3.5.2
-urllib3==1.26.18
+urllib3==2.3.0
 fal-client==0.5.8
 loguru==0.7.2 
