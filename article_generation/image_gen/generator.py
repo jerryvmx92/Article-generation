@@ -18,7 +18,7 @@ class ImageGenerator:
         self,
         prompt: str,
         aspect_ratio: str = "16:9",
-        num_images: int = 1,
+        num_images: int = 3,
         seed: Optional[int] = None,
     ) -> Dict[str, str]:
         """Generate an image using Flux Pro API."""
