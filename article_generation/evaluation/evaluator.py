@@ -1,6 +1,7 @@
 """Article quality evaluator using LLMs."""
 
 import os
+import json
 from typing import Dict, Any, List, Optional
 from anthropic import AsyncAnthropic
 import logging
@@ -89,24 +90,37 @@ Finally, provide:
 2. A summary of the main issues (if any)
 3. Top 3 recommendations for improvement
 
-Format your response as JSON with the following structure:
+IMPORTANT: Format your response as a valid JSON object with the following structure:
 {{
     "structure_score": 8,
     "structure_strengths": ["..."],
     "structure_improvements": ["..."],
     "structure_recommendations": ["..."],
-    // ... similar for other aspects
-    "overall_score": 7,
+    "content_score": 7,
+    "content_strengths": ["..."],
+    "content_improvements": ["..."],
+    "content_recommendations": ["..."],
+    "seo_score": 9,
+    "seo_strengths": ["..."],
+    "seo_improvements": ["..."],
+    "seo_recommendations": ["..."],
+    "regional_score": 6,
+    "regional_strengths": ["..."],
+    "regional_improvements": ["..."],
+    "regional_recommendations": ["..."],
+    "overall_score": 7.5,
     "main_issues": ["..."],
     "top_recommendations": ["..."]
-}}"""
+}}
+
+Make sure your response is ONLY the JSON object, with no additional text before or after."""
 
         try:
             response = await self.client.messages.create(
                 model=self.model,
                 max_tokens=self.max_tokens,
                 temperature=self.temperature,
-                system="You are an expert content evaluator. Provide detailed, objective evaluations in JSON format.",
+                system="You are an expert content evaluator. Provide detailed, objective evaluations in JSON format only.",
                 messages=[{
                     "role": "user",
                     "content": prompt
@@ -114,14 +128,16 @@ Format your response as JSON with the following structure:
             )
             
             # Extract and parse JSON from response
-            content = response.content[0].text
+            content = response.content[0].text.strip()
             try:
-                evaluation = eval(content)  # Safe since we control the input format
+                # Try to parse as JSON directly
+                evaluation = json.loads(content)
                 return evaluation
-            except Exception as e:
-                logger.error(f"Failed to parse evaluation response: {e}")
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse evaluation response as JSON: {e}")
+                logger.error(f"Raw response: {content}")
                 return {
-                    "error": "Failed to parse evaluation",
+                    "error": "Failed to parse evaluation response",
                     "raw_response": content
                 }
                 
