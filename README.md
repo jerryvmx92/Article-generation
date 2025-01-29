@@ -1,5 +1,12 @@
 # Article Generation System
 
+[![Test](https://github.com/jerryvmx92/Article-generation/actions/workflows/test.yml/badge.svg)](https://github.com/jerryvmx92/Article-generation/actions/workflows/test.yml)
+[![Lint](https://github.com/jerryvmx92/Article-generation/actions/workflows/lint.yml/badge.svg)](https://github.com/jerryvmx92/Article-generation/actions/workflows/lint.yml)
+[![Security](https://github.com/jerryvmx92/Article-generation/actions/workflows/security.yml/badge.svg)](https://github.com/jerryvmx92/Article-generation/actions/workflows/security.yml)
+[![codecov](https://codecov.io/gh/jerryvmx92/Article-generation/branch/master/graph/badge.svg)](https://codecov.io/gh/jerryvmx92/Article-generation)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 A system for generating SEO-optimized articles using LLMs and AI image generation.
 
 ## Features
