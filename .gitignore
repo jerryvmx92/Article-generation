@@ -47,3 +47,4 @@ logs/
 output/
 generated_articles/
 generated_images/
+.coverage
