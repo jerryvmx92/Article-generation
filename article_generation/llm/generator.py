@@ -2,11 +2,15 @@
 
 import os
 from typing import Dict, List, Optional
-
 from anthropic import AsyncAnthropic
 from dotenv import load_dotenv
+import logging
+
+from ..evaluation.trace_logger import TraceLogger
+from ..evaluation.evaluator import ArticleEvaluator
 
 load_dotenv()
+logger = logging.getLogger(__name__)
 
 class ArticleGenerator:
     def __init__(self, api_key: Optional[str] = None):
@@ -23,6 +27,10 @@ class ArticleGenerator:
         self.model = os.getenv("ANTHROPIC_MODEL", "claude-3-opus-20240229")
         self.max_tokens = int(os.getenv("MAX_TOKENS", "4096"))
         self.temperature = float(os.getenv("TEMPERATURE", "0.7"))
+        
+        # Initialize evaluation tools
+        self.trace_logger = TraceLogger()
+        self.evaluator = ArticleEvaluator(api_key=self.api_key)
 
     async def generate_article(
         self,
@@ -71,11 +79,33 @@ class ArticleGenerator:
             
             content = message.content[0].text if hasattr(message, 'content') else message.completion
             
-            return {
+            result = {
                 "title": title,
                 "content": content,
                 "keywords": keywords
             }
+            
+            # Log the successful generation
+            self.trace_logger.log_trace(
+                title=title,
+                keywords=keywords,
+                prompt=prompt,
+                response=result
+            )
+            
+            # Evaluate the article
+            evaluation = await self.evaluator.evaluate_article(
+                content=content,
+                title=title,
+                keywords=keywords,
+                min_length=min_length,
+                max_length=max_length
+            )
+            
+            # Add evaluation to result
+            result["evaluation"] = evaluation
+            
+            return result
             
         except Exception as e:
             print("\n=== API Error in generate_article ===")
@@ -86,6 +116,16 @@ class ArticleGenerator:
                 print(f"Response body: {e.response.text}")
             if hasattr(e, 'request'):
                 print(f"Request details: {e.request}")
+                
+            # Log the failed generation
+            self.trace_logger.log_trace(
+                title=title,
+                keywords=keywords,
+                prompt=prompt,
+                response={},
+                error=e
+            )
+            
             raise e from None
 
     def _create_seo_prompt(
