@@ -48,7 +48,7 @@ class ArticleGenerator:
             max_length: Maximum word length (optional)
             
         Returns:
-            Dict containing the article title, content, and keywords
+            Dict containing the article title, content, keywords and evaluation results
         """
         prompt = self._create_seo_prompt(title, keywords, min_length, max_length)
         
@@ -79,21 +79,8 @@ class ArticleGenerator:
             
             content = message.content[0].text if hasattr(message, 'content') else message.completion
             
-            result = {
-                "title": title,
-                "content": content,
-                "keywords": keywords
-            }
-            
-            # Log the successful generation
-            self.trace_logger.log_trace(
-                title=title,
-                keywords=keywords,
-                prompt=prompt,
-                response=result
-            )
-            
             # Evaluate the article
+            print("\n=== Evaluating Article ===")
             evaluation = await self.evaluator.evaluate_article(
                 content=content,
                 title=title,
@@ -102,8 +89,22 @@ class ArticleGenerator:
                 max_length=max_length
             )
             
-            # Add evaluation to result
-            result["evaluation"] = evaluation
+            # Create response with evaluation
+            result = {
+                "title": title,
+                "content": content,
+                "keywords": keywords,
+                "evaluation": evaluation
+            }
+            
+            # Log the successful generation with evaluation
+            self.trace_logger.log_trace(
+                title=title,
+                keywords=keywords,
+                prompt=prompt,
+                response=result,
+                metadata={"evaluation_included": True}
+            )
             
             return result
             
@@ -123,7 +124,8 @@ class ArticleGenerator:
                 keywords=keywords,
                 prompt=prompt,
                 response={},
-                error=e
+                error=e,
+                metadata={"evaluation_attempted": False}
             )
             
             raise e from None
