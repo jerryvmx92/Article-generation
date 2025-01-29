@@ -1,0 +1,40 @@
+name: Lint
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        
+    - name: Install uv
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+        
+    - name: Install dependencies
+      run: |
+        uv pip install black flake8 isort mypy
+        
+    - name: Run black
+      run: black . --check
+        
+    - name: Run flake8
+      run: flake8 .
+        
+    - name: Run isort
+      run: isort . --check-only --diff
+        
+    - name: Run mypy
+      run: mypy article_generation tests 
