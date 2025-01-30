@@ -1,0 +1,428 @@
+{
+  "name": "prompt_optimization",
+  "description": "Testing different prompt structures for article generation",
+  "metrics": [
+    "structure_score",
+    "content_score",
+    "seo_score"
+  ],
+  "variants": {
+    "91d0ca5b-76e7-4859-b1ff-7d1823d330dc": {
+      "name": "baseline",
+      "prompt_template": "Write a comprehensive article about {title}. \nFocus on these keywords: {keywords}.\nThe article should be informative and engaging.",
+      "metadata": {}
+    },
+    "f7368bc9-c651-40c8-b991-6adf9b298153": {
+      "name": "structured",
+      "prompt_template": "Create a detailed article about {title} with the following structure:\n\n1. Introduction\n   - Hook the reader\n   - Provide context\n   - State the article's purpose\n\n2. Main Content\n   - Key points and explanations\n   - Examples and evidence\n   - Best practices\n   - Expert insights\n\n3. Practical Applications\n   - How-to guidance\n   - Tips and recommendations\n   - Common challenges and solutions\n\n4. Conclusion\n   - Summary of main points\n   - Call to action\n   - Final thoughts\n\nKeywords to incorporate: {keywords}\nMake the content informative, engaging, and actionable.",
+      "metadata": {}
+    },
+    "55e3508f-2de7-40cb-88cd-29e6667012a1": {
+      "name": "seo_focused",
+      "prompt_template": "Write an SEO-optimized article about {title}.\n\nTarget Keywords: {keywords}\n\nContent Requirements:\n- Use keywords naturally throughout the text\n- Include keyword variations\n- Write engaging meta descriptions\n- Use proper header hierarchy (H1, H2, H3)\n- Include internal linking opportunities\n- Focus on user intent and value\n\nMake the content comprehensive, authoritative, and valuable to readers.",
+      "metadata": {}
+    }
+  },
+  "trials": [
+    {
+      "id": "eb367928-3418-463a-a12e-573b291c714f",
+      "variant_id": "91d0ca5b-76e7-4859-b1ff-7d1823d330dc",
+      "timestamp": "2025-01-29T18:58:51.116429",
+      "metrics": {
+        "structure_score": 9,
+        "content_score": 8,
+        "seo_score": 7
+      },
+      "metadata": {
+        "title": "Benefits of Regular AC Maintenance",
+        "keywords": [
+          "AC maintenance",
+          "air conditioning",
+          "HVAC service",
+          "energy efficiency"
+        ],
+        "content_length": 720
+      }
+    },
+    {
+      "id": "59c8024b-8d78-443a-90cd-058fd158d00a",
+      "variant_id": "91d0ca5b-76e7-4859-b1ff-7d1823d330dc",
+      "timestamp": "2025-01-29T19:01:19.175268",
+      "metrics": {
+        "structure_score": 9,
+        "content_score": 8,
+        "seo_score": 7
+      },
+      "metadata": {
+        "title": "Benefits of Regular AC Maintenance",
+        "keywords": [
+          "AC maintenance",
+          "air conditioning",
+          "HVAC service",
+          "energy efficiency"
+        ],
+        "content_length": 1007
+      }
+    },
+    {
+      "id": "9cc655a6-cdb2-474a-baa0-4b3318a2b87b",
+      "variant_id": "91d0ca5b-76e7-4859-b1ff-7d1823d330dc",
+      "timestamp": "2025-01-29T19:16:09.662779",
+      "metrics": {
+        "structure_score": 9,
+        "content_score": 8,
+        "seo_score": 8
+      },
+      "metadata": {
+        "title": "Benefits of Regular AC Maintenance",
+        "keywords": [
+          "AC maintenance",
+          "air conditioning",
+          "HVAC service",
+          "energy efficiency"
+        ],
+        "content_length": 812
+      }
+    },
+    {
+      "id": "f67acef8-0f94-4a5d-9647-bf89152a81ef",
+      "variant_id": "91d0ca5b-76e7-4859-b1ff-7d1823d330dc",
+      "timestamp": "2025-01-29T20:43:24.724540",
+      "metrics": {
+        "structure_score": 9,
+        "content_score": 8,
+        "seo_score": 9
+      },
+      "metadata": {
+        "title": "Benefits of Regular AC Maintenance",
+        "keywords": [
+          "AC maintenance",
+          "air conditioning",
+          "HVAC service",
+          "energy efficiency"
+        ],
+        "content_length": 733
+      }
+    },
+    {
+      "id": "1ceaa137-4784-429b-a5f2-1367f3e0a5fb",
+      "variant_id": "f7368bc9-c651-40c8-b991-6adf9b298153",
+      "timestamp": "2025-01-29T20:44:38.547541",
+      "metrics": {
+        "structure_score": 9,
+        "content_score": 8,
+        "seo_score": 7
+      },
+      "metadata": {
+        "title": "Benefits of Regular AC Maintenance",
+        "keywords": [
+          "AC maintenance",
+          "air conditioning",
+          "HVAC service",
+          "energy efficiency"
+        ],
+        "content_length": 659
+      }
+    },
+    {
+      "id": "06524a9c-46ad-44e7-878f-fa1920b5a385",
+      "variant_id": "55e3508f-2de7-40cb-88cd-29e6667012a1",
+      "timestamp": "2025-01-29T20:46:05.438512",
+      "metrics": {
+        "structure_score": 9,
+        "content_score": 8,
+        "seo_score": 7
+      },
+      "metadata": {
+        "title": "Benefits of Regular AC Maintenance",
+        "keywords": [
+          "AC maintenance",
+          "air conditioning",
+          "HVAC service",
+          "energy efficiency"
+        ],
+        "content_length": 889
+      }
+    },
+    {
+      "id": "979d5e12-f450-4ea4-9d96-1c257bc429a7",
+      "variant_id": "91d0ca5b-76e7-4859-b1ff-7d1823d330dc",
+      "timestamp": "2025-01-29T20:47:06.494015",
+      "metrics": {
+        "structure_score": 9,
+        "content_score": 8,
+        "seo_score": 9
+      },
+      "metadata": {
+        "title": "Industrial Safety Best Practices",
+        "keywords": [
+          "workplace safety",
+          "industrial safety",
+          "safety protocols",
+          "risk management"
+        ],
+        "content_length": 742
+      }
+    },
+    {
+      "id": "0850afbb-864f-4ab5-9a09-ec55b00c508b",
+      "variant_id": "f7368bc9-c651-40c8-b991-6adf9b298153",
+      "timestamp": "2025-01-29T20:48:12.904667",
+      "metrics": {
+        "structure_score": 9,
+        "content_score": 8,
+        "seo_score": 7
+      },
+      "metadata": {
+        "title": "Industrial Safety Best Practices",
+        "keywords": [
+          "workplace safety",
+          "industrial safety",
+          "safety protocols",
+          "risk management"
+        ],
+        "content_length": 873
+      }
+    },
+    {
+      "id": "856fa6ab-ea37-4f0d-aa87-1d7496d509f8",
+      "variant_id": "55e3508f-2de7-40cb-88cd-29e6667012a1",
+      "timestamp": "2025-01-29T20:49:23.361587",
+      "metrics": {
+        "structure_score": 9,
+        "content_score": 8,
+        "seo_score": 9
+      },
+      "metadata": {
+        "title": "Industrial Safety Best Practices",
+        "keywords": [
+          "workplace safety",
+          "industrial safety",
+          "safety protocols",
+          "risk management"
+        ],
+        "content_length": 783
+      }
+    },
+    {
+      "id": "d9d493b5-f0f8-4032-8674-b391bc570ab5",
+      "variant_id": "91d0ca5b-76e7-4859-b1ff-7d1823d330dc",
+      "timestamp": "2025-01-29T20:50:24.636228",
+      "metrics": {
+        "structure_score": 9,
+        "content_score": 8,
+        "seo_score": 7
+      },
+      "metadata": {
+        "title": "Construction Project Management",
+        "keywords": [
+          "project management",
+          "construction",
+          "timeline planning",
+          "resource allocation"
+        ],
+        "content_length": 842
+      }
+    },
+    {
+      "id": "959e918d-3488-4049-ae32-520db5563593",
+      "variant_id": "f7368bc9-c651-40c8-b991-6adf9b298153",
+      "timestamp": "2025-01-29T20:51:25.296770",
+      "metrics": {
+        "structure_score": 9,
+        "content_score": 8,
+        "seo_score": 7
+      },
+      "metadata": {
+        "title": "Construction Project Management",
+        "keywords": [
+          "project management",
+          "construction",
+          "timeline planning",
+          "resource allocation"
+        ],
+        "content_length": 759
+      }
+    },
+    {
+      "id": "676064bb-27b3-48d4-bb8b-5a90219f770a",
+      "variant_id": "91d0ca5b-76e7-4859-b1ff-7d1823d330dc",
+      "timestamp": "2025-01-29T22:15:43.837620",
+      "metrics": {
+        "structure_score": 9,
+        "content_score": 8,
+        "seo_score": 7
+      },
+      "metadata": {
+        "title": "Benefits of Regular AC Maintenance",
+        "keywords": [
+          "AC maintenance",
+          "air conditioning",
+          "HVAC service",
+          "energy efficiency"
+        ],
+        "content_length": 895
+      }
+    },
+    {
+      "id": "5d37c692-e0b9-498a-961d-8f646585f15a",
+      "variant_id": "f7368bc9-c651-40c8-b991-6adf9b298153",
+      "timestamp": "2025-01-29T22:16:44.308282",
+      "metrics": {
+        "structure_score": 9,
+        "content_score": 8,
+        "seo_score": 7
+      },
+      "metadata": {
+        "title": "Benefits of Regular AC Maintenance",
+        "keywords": [
+          "AC maintenance",
+          "air conditioning",
+          "HVAC service",
+          "energy efficiency"
+        ],
+        "content_length": 653
+      }
+    },
+    {
+      "id": "2af866d4-ede3-4196-9577-b81c11c50d17",
+      "variant_id": "55e3508f-2de7-40cb-88cd-29e6667012a1",
+      "timestamp": "2025-01-29T22:17:59.328843",
+      "metrics": {
+        "structure_score": 9,
+        "content_score": 8,
+        "seo_score": 9
+      },
+      "metadata": {
+        "title": "Benefits of Regular AC Maintenance",
+        "keywords": [
+          "AC maintenance",
+          "air conditioning",
+          "HVAC service",
+          "energy efficiency"
+        ],
+        "content_length": 867
+      }
+    },
+    {
+      "id": "4c6f7831-9e34-4008-9b37-90039a248eda",
+      "variant_id": "91d0ca5b-76e7-4859-b1ff-7d1823d330dc",
+      "timestamp": "2025-01-29T22:19:40.549134",
+      "metrics": {
+        "structure_score": 9,
+        "content_score": 8,
+        "seo_score": 7
+      },
+      "metadata": {
+        "title": "Industrial Safety Best Practices",
+        "keywords": [
+          "workplace safety",
+          "industrial safety",
+          "safety protocols",
+          "risk management"
+        ],
+        "content_length": 1055
+      }
+    },
+    {
+      "id": "d16e1f70-e75b-433a-be08-cbfe2ac1c42b",
+      "variant_id": "f7368bc9-c651-40c8-b991-6adf9b298153",
+      "timestamp": "2025-01-29T22:20:51.442103",
+      "metrics": {
+        "structure_score": 9,
+        "content_score": 8,
+        "seo_score": 7
+      },
+      "metadata": {
+        "title": "Industrial Safety Best Practices",
+        "keywords": [
+          "workplace safety",
+          "industrial safety",
+          "safety protocols",
+          "risk management"
+        ],
+        "content_length": 974
+      }
+    },
+    {
+      "id": "b2895c41-6a3d-49d6-9cd1-746a21c0a21e",
+      "variant_id": "55e3508f-2de7-40cb-88cd-29e6667012a1",
+      "timestamp": "2025-01-29T22:21:55.135923",
+      "metrics": {
+        "structure_score": 9,
+        "content_score": 8,
+        "seo_score": 7
+      },
+      "metadata": {
+        "title": "Industrial Safety Best Practices",
+        "keywords": [
+          "workplace safety",
+          "industrial safety",
+          "safety protocols",
+          "risk management"
+        ],
+        "content_length": 853
+      }
+    },
+    {
+      "id": "675e1079-74ed-49d3-8728-cf871752b08c",
+      "variant_id": "91d0ca5b-76e7-4859-b1ff-7d1823d330dc",
+      "timestamp": "2025-01-29T22:22:48.625571",
+      "metrics": {
+        "structure_score": 9,
+        "content_score": 8,
+        "seo_score": 9
+      },
+      "metadata": {
+        "title": "Construction Project Management",
+        "keywords": [
+          "project management",
+          "construction",
+          "timeline planning",
+          "resource allocation"
+        ],
+        "content_length": 777
+      }
+    },
+    {
+      "id": "8274e359-9b90-4d25-8871-a91c699c5dfb",
+      "variant_id": "f7368bc9-c651-40c8-b991-6adf9b298153",
+      "timestamp": "2025-01-29T22:23:52.428081",
+      "metrics": {
+        "structure_score": 9,
+        "content_score": 8,
+        "seo_score": 7
+      },
+      "metadata": {
+        "title": "Construction Project Management",
+        "keywords": [
+          "project management",
+          "construction",
+          "timeline planning",
+          "resource allocation"
+        ],
+        "content_length": 835
+      }
+    },
+    {
+      "id": "aab6793f-1f09-4376-9c61-76aca8f926cf",
+      "variant_id": "55e3508f-2de7-40cb-88cd-29e6667012a1",
+      "timestamp": "2025-01-29T22:25:01.374859",
+      "metrics": {
+        "structure_score": 9,
+        "content_score": 8,
+        "seo_score": 7
+      },
+      "metadata": {
+        "title": "Construction Project Management",
+        "keywords": [
+          "project management",
+          "construction",
+          "timeline planning",
+          "resource allocation"
+        ],
+        "content_length": 903
+      }
+    }
+  ]
+}
