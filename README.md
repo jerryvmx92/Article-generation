@@ -1,13 +1,6 @@
 # Article Generation System
 
-[![Test](https://github.com/jerryvmx92/Article-generation/actions/workflows/test.yml/badge.svg)](https://github.com/jerryvmx92/Article-generation/actions/workflows/test.yml)
-[![Lint](https://github.com/jerryvmx92/Article-generation/actions/workflows/lint.yml/badge.svg)](https://github.com/jerryvmx92/Article-generation/actions/workflows/lint.yml)
-[![Security](https://github.com/jerryvmx92/Article-generation/actions/workflows/security.yml/badge.svg)](https://github.com/jerryvmx92/Article-generation/actions/workflows/security.yml)
-[![codecov](https://codecov.io/gh/jerryvmx92/Article-generation/branch/master/graph/badge.svg)](https://codecov.io/gh/jerryvmx92/Article-generation)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-
-A system for generating SEO-optimized articles using LLMs and AI image generation.
+A system for generating SEO-optimized articles using LLMs and AI image generation, with built-in evaluation framework for systematic improvement.
 
 ## Features
 
@@ -15,79 +8,76 @@ A system for generating SEO-optimized articles using LLMs and AI image generatio
 - Create relevant images using Flux Pro API
 - FastAPI-based REST API
 - Automatic content saving and organization
+- Built-in evaluation framework for systematic improvement:
+  - A/B testing of different prompt templates
+  - Automated metric tracking (structure, content, SEO scores)
+  - Interactive dashboard for visualizing results
+  - Human feedback integration
 
-## Setup
+## Prerequisites
 
-1. Install dependencies using uv:
+- Python 3.10 or higher
+- [uv](https://github.com/astral-sh/uv) - Modern Python package installer and resolver
+- Anthropic API key for Claude
+- Flux Pro API key for image generation
+
+## Installation
+
+1. Install uv if you haven't already:
+```bash
+pip install uv
+```
+
+2. Clone the repository:
+```bash
+git clone https://github.com/yourusername/Article-generation.git
+cd Article-generation
+```
+
+3. Create and activate a virtual environment with uv:
+```bash
+uv venv
+source .venv/bin/activate  # On Unix/macOS
+# or
+.venv\Scripts\activate  # On Windows
+```
+
+4. Install dependencies:
 ```bash
 uv pip install -r requirements.txt
 ```
 
-2. For development, install additional dependencies:
-```bash
-uv pip install -r requirements-dev.txt
-```
-
-3. Create a `.env` file with your API keys and configuration:
+5. Create a `.env` file with your API keys:
 ```bash
 cp .env.example .env
 # Edit .env with your API keys
 ```
 
-## Testing
+## Project Structure
 
-The project uses pytest for testing. Here are the different ways to run tests:
-
-1. Run all tests:
-```bash
-pytest tests/
 ```
-
-2. Run tests with verbose output:
-```bash
-pytest tests/ -v
+Article-generation/
+├── article_generation/
+│   ├── llm/                # LLM-based article generation
+│   ├── image_gen/         # Image generation using Flux Pro
+│   ├── integration/       # Integration of articles and images
+│   ├── experimentation/   # Evaluation framework
+│   │   ├── experiment.py  # Core experiment functionality
+│   │   ├── dashboard.py   # Streamlit dashboard
+│   │   └── feedback.py    # Human feedback management
+│   └── evaluation/
+│       └── evaluator.py   # Article evaluation metrics
+├── experiments/           # Experiment configuration files
+├── traces/               # Generated article traces
+├── tests/               # Test suite
+├── main.py              # FastAPI server
+├── run_dashboard.py     # Evaluation dashboard
+└── run_experiment.py    # Experiment runner
 ```
-
-3. Run specific test categories:
-```bash
-# Run only integration tests
-pytest tests/ -v -m integration
-
-# Run all tests except integration tests
-pytest tests/ -v -m "not integration"
-```
-
-4. Run tests with debug output:
-```bash
-pytest tests/ -v --log-cli-level=DEBUG
-```
-
-### Test Categories
-
-- **Unit Tests**: Test individual components in isolation
-- **Integration Tests**: Test interaction with external APIs (requires valid API keys)
-- **Content Quality Tests**: Validate article structure and content requirements
-
-### Environment Setup for Tests
-
-1. For running integration tests, you need a valid Anthropic API key in your `.env` file:
-```bash
-ANTHROPIC_API_KEY=your_api_key_here
-```
-
-2. Integration tests will be skipped if:
-   - No API key is provided
-   - The API key is set to "test_api_key"
-   - The API key is invalid
-
-3. Test Configuration:
-   - Model: claude-3-opus-20240229
-   - Max Tokens: 4096
-   - Temperature: 0.7
-   - Min Article Length: 1200 words
-   - Max Article Length: 3000 words
 
 ## Usage
+
+### Article Generation API
 
 1. Start the API server:
 ```bash
@@ -96,14 +86,13 @@ python main.py
 
 2. The API will be available at `http://localhost:8000`
 
-3. API Documentation will be available at:
+3. API Documentation:
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
 
-## API Endpoints
+### API Endpoints
 
-### POST /generate
-
+#### POST /generate
 Generate an article with images.
 
 Request body:
@@ -124,15 +113,57 @@ Response:
 }
 ```
 
-## Project Structure
+### Evaluation Framework
 
+The project includes a comprehensive evaluation framework based on [Hamel Husain's approach](https://hamel.dev/blog/posts/evals/#level-3-ab-testing) with three levels:
+
+1. **Unit Tests**: Fast, automated tests for basic validation
+2. **Human & Model Eval**: Detailed quality assessment
+3. **A/B Testing**: Compare different prompt variants
+
+To use the evaluation framework:
+
+1. Create an experiment configuration in `experiments/` directory
+2. Run experiments:
+```bash
+python run_experiment.py
 ```
-article_generation/
-├── llm/                    # LLM-based article generation
-├── image_gen/             # Image generation using Flux Pro
-└── integration/           # Integration of articles and images
+
+3. View results in the dashboard:
+```bash
+streamlit run run_dashboard.py
 ```
 
-## Environment Variables
+The dashboard provides:
+- Experiment overview
+- Metric analysis over time
+- Statistical comparisons between variants
+- Human feedback integration
 
-See `.env.example` for all available configuration options.
+## Testing
+
+Run all tests:
+```bash
+pytest tests/
+```
+
+Run specific test categories:
+```bash
+# Run only integration tests
+pytest tests/ -v -m integration
+
+# Run all tests except integration tests
+pytest tests/ -v -m "not integration"
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
