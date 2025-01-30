@@ -13,12 +13,8 @@ from scipy import stats
 @dataclass
 class Variant:
     """Represents a variant in an experiment."""
-    id: str
     name: str
     prompt_template: str
-    model: str
-    temperature: float
-    max_tokens: int
     metadata: Dict[str, Any]
 
 @dataclass
@@ -27,10 +23,7 @@ class Trial:
     id: str
     variant_id: str
     timestamp: datetime.datetime
-    title: str
-    keywords: List[str]
     metrics: Dict[str, float]
-    evaluation: Dict[str, Any]
     metadata: Dict[str, Any]
 
 class Experiment:
@@ -68,9 +61,6 @@ class Experiment:
         self,
         name: str,
         prompt_template: str,
-        model: str,
-        temperature: float = 0.7,
-        max_tokens: int = 4096,
         metadata: Optional[Dict[str, Any]] = None
     ) -> str:
         """Add a variant to the experiment.
@@ -78,9 +68,6 @@ class Experiment:
         Args:
             name: Name of the variant
             prompt_template: The prompt template to use
-            model: The model to use (e.g., "claude-3-opus-20240229")
-            temperature: Model temperature
-            max_tokens: Maximum tokens
             metadata: Additional metadata about the variant
             
         Returns:
@@ -88,12 +75,8 @@ class Experiment:
         """
         variant_id = str(uuid.uuid4())
         variant = Variant(
-            id=variant_id,
             name=name,
             prompt_template=prompt_template,
-            model=model,
-            temperature=temperature,
-            max_tokens=max_tokens,
             metadata=metadata or {}
         )
         self.variants[variant_id] = variant
@@ -103,20 +86,14 @@ class Experiment:
     def record_trial(
         self,
         variant_id: str,
-        title: str,
-        keywords: List[str],
         metrics: Dict[str, float],
-        evaluation: Dict[str, Any],
         metadata: Optional[Dict[str, Any]] = None
     ) -> str:
         """Record a trial for a variant.
         
         Args:
             variant_id: ID of the variant used
-            title: Article title
-            keywords: Article keywords
             metrics: Metric values (must include all experiment metrics)
-            evaluation: Full evaluation results
             metadata: Additional metadata about the trial
             
         Returns:
@@ -127,135 +104,101 @@ class Experiment:
         if missing_metrics:
             raise ValueError(f"Missing required metrics: {missing_metrics}")
         
+        # Ensure variant exists
+        if variant_id not in self.variants:
+            raise ValueError(f"Unknown variant: {variant_id}")
+        
         trial = Trial(
             id=str(uuid.uuid4()),
             variant_id=variant_id,
             timestamp=datetime.datetime.now(),
-            title=title,
-            keywords=keywords,
             metrics=metrics,
-            evaluation=evaluation,
             metadata=metadata or {}
         )
         self.trials.append(trial)
         self._save_experiment()
         return trial.id
     
-    def analyze_results(self, metric: str, control_variant: str) -> Dict[str, Any]:
-        """Analyze experiment results for a specific metric.
+    def analyze_results(self) -> Dict[str, Any]:
+        """Analyze experiment results.
         
-        Args:
-            metric: The metric to analyze
-            control_variant: ID of the control variant to compare against
-            
         Returns:
             Dictionary containing analysis results
         """
-        if metric not in self.metrics:
-            raise ValueError(f"Unknown metric: {metric}")
-            
-        results = {
-            "metric": metric,
-            "control": control_variant,
-            "variants": {},
-            "summary": {}
-        }
-        
-        # Get control data
-        control_data = [
-            t.metrics[metric] 
-            for t in self.trials 
-            if t.variant_id == control_variant
-        ]
-        
-        if not control_data:
-            raise ValueError("No data for control variant")
-            
-        control_mean = np.mean(control_data)
-        control_std = np.std(control_data)
-        
-        results["variants"][control_variant] = {
-            "name": self.variants[control_variant].name,
-            "sample_size": len(control_data),
-            "mean": float(control_mean),
-            "std": float(control_std)
-        }
-        
-        # Compare each variant against control
-        for variant_id, variant in self.variants.items():
-            if variant_id == control_variant:
-                continue
-                
-            variant_data = [
-                t.metrics[metric] 
-                for t in self.trials 
-                if t.variant_id == variant_id
-            ]
-            
-            if not variant_data:
-                continue
-                
-            # Calculate statistics
-            variant_mean = np.mean(variant_data)
-            variant_std = np.std(variant_data)
-            
-            # Perform t-test
-            t_stat, p_value = stats.ttest_ind(control_data, variant_data)
-            
-            # Calculate effect size (Cohen's d)
-            pooled_std = np.sqrt((control_std**2 + variant_std**2) / 2)
-            effect_size = (variant_mean - control_mean) / pooled_std
-            
-            results["variants"][variant_id] = {
-                "name": variant.name,
-                "sample_size": len(variant_data),
-                "mean": float(variant_mean),
-                "std": float(variant_std),
-                "p_value": float(p_value),
-                "effect_size": float(effect_size),
-                "significant": p_value < 0.05,
-                "improvement": float(((variant_mean / control_mean) - 1) * 100)
+        if not self.trials:
+            return {
+                "total_trials": 0,
+                "variant_performance": {}
             }
         
-        # Summarize results
-        results["summary"] = {
-            "total_trials": len(self.trials),
-            "start_date": min(t.timestamp for t in self.trials),
-            "end_date": max(t.timestamp for t in self.trials),
-            "significant_improvements": sum(
-                1 for v in results["variants"].values()
-                if v.get("significant", False) and v.get("improvement", 0) > 0
-            )
+        # Get all variant IDs that have trials
+        variant_ids = sorted(list(set(t.variant_id for t in self.trials)))
+        if not variant_ids:
+            return {
+                "total_trials": 0,
+                "variant_performance": {}
+            }
+        
+        # Find baseline variant ID - look for variant with name "baseline" first
+        baseline_id = None
+        baseline_trials = []
+        
+        # First try to find a variant named "baseline"
+        for vid, variant in self.variants.items():
+            if variant.name.lower() == "baseline":
+                baseline_id = vid
+                baseline_trials = [t for t in self.trials if t.variant_id == vid]
+                break
+        
+        # If no baseline variant found or it has no trials, use the variant with most trials
+        if not baseline_trials:
+            variant_trial_counts = {}
+            for vid in variant_ids:
+                variant_trial_counts[vid] = len([t for t in self.trials if t.variant_id == vid])
+            
+            baseline_id = max(variant_trial_counts.items(), key=lambda x: x[1])[0]
+            baseline_trials = [t for t in self.trials if t.variant_id == baseline_id]
+        
+        if not baseline_trials:
+            raise ValueError("No trials found for any variant")
+        
+        baseline_data = {
+            metric: [t.metrics[metric] for t in baseline_trials]
+            for metric in self.metrics
         }
         
+        results = {
+            "total_trials": len(self.trials),
+            "baseline_variant": self.variants[baseline_id].name,
+            "variant_performance": {}
+        }
+        
+        # Calculate performance vs baseline for each variant
+        for variant_id in variant_ids:
+            if variant_id == baseline_id:
+                continue
+            
+            variant_performance = {}
+            for metric in self.metrics:
+                variant_data = [
+                    t.metrics[metric] 
+                    for t in self.trials 
+                    if t.variant_id == variant_id
+                ]
+                
+                if not variant_data or not baseline_data[metric]:
+                    continue
+                
+                # Calculate relative improvement
+                baseline_mean = np.mean(baseline_data[metric])
+                variant_mean = np.mean(variant_data)
+                
+                variant_performance[metric] = (variant_mean / baseline_mean) - 1
+            
+            if variant_performance:
+                results["variant_performance"][self.variants[variant_id].name] = variant_performance
+        
         return results
-    
-    def get_best_variant(self, metric: str) -> Optional[str]:
-        """Get the best performing variant for a metric.
-        
-        Args:
-            metric: The metric to optimize for
-            
-        Returns:
-            ID of the best variant, or None if insufficient data
-        """
-        if not self.trials:
-            return None
-            
-        variant_means = {}
-        for variant_id in self.variants:
-            variant_data = [
-                t.metrics[metric] 
-                for t in self.trials 
-                if t.variant_id == variant_id
-            ]
-            if variant_data:
-                variant_means[variant_id] = np.mean(variant_data)
-        
-        if not variant_means:
-            return None
-            
-        return max(variant_means.items(), key=lambda x: x[1])[0]
     
     def to_dataframe(self) -> pd.DataFrame:
         """Convert experiment data to a pandas DataFrame.
@@ -269,18 +212,12 @@ class Experiment:
                 "trial_id": trial.id,
                 "variant_id": trial.variant_id,
                 "variant_name": self.variants[trial.variant_id].name,
-                "timestamp": trial.timestamp,
-                "title": trial.title,
-                "keywords": ",".join(trial.keywords)
+                "timestamp": trial.timestamp
             }
             # Add metrics
             row.update(trial.metrics)
-            # Add variant info
-            variant = self.variants[trial.variant_id]
-            row.update({
-                "model": variant.model,
-                "temperature": variant.temperature
-            })
+            # Add metadata
+            row.update(trial.metadata)
             data.append(row)
         
         return pd.DataFrame(data)
@@ -292,26 +229,19 @@ class Experiment:
             "description": self.description,
             "metrics": self.metrics,
             "variants": {
-                vid: {
-                    "id": v.id,
+                name: {
                     "name": v.name,
                     "prompt_template": v.prompt_template,
-                    "model": v.model,
-                    "temperature": v.temperature,
-                    "max_tokens": v.max_tokens,
                     "metadata": v.metadata
                 }
-                for vid, v in self.variants.items()
+                for name, v in self.variants.items()
             },
             "trials": [
                 {
                     "id": t.id,
                     "variant_id": t.variant_id,
                     "timestamp": t.timestamp.isoformat(),
-                    "title": t.title,
-                    "keywords": t.keywords,
                     "metrics": t.metrics,
-                    "evaluation": t.evaluation,
                     "metadata": t.metadata
                 }
                 for t in self.trials
@@ -333,16 +263,12 @@ class Experiment:
             
         # Load variants
         self.variants = {
-            vid: Variant(
-                id=v["id"],
+            id: Variant(
                 name=v["name"],
                 prompt_template=v["prompt_template"],
-                model=v["model"],
-                temperature=v["temperature"],
-                max_tokens=v["max_tokens"],
                 metadata=v["metadata"]
             )
-            for vid, v in data["variants"].items()
+            for id, v in data["variants"].items()
         }
         
         # Load trials
@@ -351,10 +277,7 @@ class Experiment:
                 id=t["id"],
                 variant_id=t["variant_id"],
                 timestamp=datetime.datetime.fromisoformat(t["timestamp"]),
-                title=t["title"],
-                keywords=t["keywords"],
                 metrics=t["metrics"],
-                evaluation=t["evaluation"],
                 metadata=t["metadata"]
             )
             for t in data["trials"]

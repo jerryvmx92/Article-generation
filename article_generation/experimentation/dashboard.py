@@ -14,14 +14,29 @@ from .feedback import FeedbackManager
 def load_experiment(experiment_name: str) -> Optional[Experiment]:
     """Load an experiment by name."""
     try:
+        # Load experiment data from JSON file
+        experiment_path = os.path.join("experiments", f"{experiment_name}.json")
+        if not os.path.exists(experiment_path):
+            st.error(f"Experiment file not found: {experiment_path}")
+            return None
+            
+        # Create experiment instance
         experiment = Experiment(
             name=experiment_name,
             description="",  # Will be loaded from file
             metrics=[]  # Will be loaded from file
         )
+        
+        # Force reload experiment data
+        experiment._load_experiment()
+        
+        if not experiment.variants:
+            st.error("No variants found in experiment data")
+            return None
+            
         return experiment
     except Exception as e:
-        st.error(f"Failed to load experiment: {e}")
+        st.error(f"Failed to load experiment: {str(e)}")
         return None
 
 def load_feedback() -> Optional[FeedbackManager]:
@@ -32,23 +47,23 @@ def load_feedback() -> Optional[FeedbackManager]:
         st.error(f"Failed to load feedback data: {e}")
         return None
 
-def plot_metric_over_time(df: pd.DataFrame, metric: str, variant_col: str = "variant_name"):
+def plot_metric_over_time(df: pd.DataFrame, metric: str):
     """Plot metric values over time with trend lines."""
     fig = px.scatter(
         df,
         x="timestamp",
         y=metric,
-        color=variant_col,
+        color="variant_name",  # Use variant_name for display
         trendline="lowess",
         title=f"{metric} Over Time by Variant"
     )
     st.plotly_chart(fig)
 
-def plot_metric_distribution(df: pd.DataFrame, metric: str, variant_col: str = "variant_name"):
+def plot_metric_distribution(df: pd.DataFrame, metric: str):
     """Plot distribution of metric values by variant."""
     fig = px.box(
         df,
-        x=variant_col,
+        x="variant_name",  # Use variant_name for display
         y=metric,
         title=f"Distribution of {metric} by Variant"
     )
@@ -164,20 +179,17 @@ def main():
         
         # Statistical analysis
         st.subheader("Statistical Analysis")
-        control_variant = st.selectbox(
-            "Select Control Variant",
-            [v.name for v in experiment.variants.values()]
-        )
-        
-        control_id = next(
-            vid for vid, v in experiment.variants.items()
-            if v.name == control_variant
-        )
-        
-        results = experiment.analyze_results(metric, control_id)
+        results = experiment.analyze_results()
         
         # Display results
-        st.json(results)
+        st.write("Total trials:", results["total_trials"])
+        st.write(f"\nBaseline variant: {results['baseline_variant']}")
+        st.write("\nPerformance vs Baseline:")
+        for variant, metrics in results["variant_performance"].items():
+            if variant != results["baseline_variant"]:
+                st.write(f"\n{variant}:")
+                for metric_name, value in metrics.items():
+                    st.write(f"  {metric_name}: {value:+.2%}")
         
     elif page == "Feedback Analysis":
         st.header("Feedback Analysis")
