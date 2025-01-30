@@ -38,6 +38,7 @@ class ArticleGenerator:
         keywords: List[str],
         min_length: Optional[int] = None,
         max_length: Optional[int] = None,
+        prompt_template: Optional[str] = None,
     ) -> Dict[str, str]:
         """Generate an SEO-optimized article with the given title.
         
@@ -46,6 +47,7 @@ class ArticleGenerator:
             keywords: List of keywords to include in the article
             min_length: Minimum word length (optional)
             max_length: Maximum word length (optional)
+            prompt_template: Custom prompt template to use (optional)
             
         Returns:
             Dict containing the article title, content, keywords and evaluation results
@@ -53,7 +55,7 @@ class ArticleGenerator:
         Raises:
             Exception: If article generation fails
         """
-        prompt = self._create_seo_prompt(title, keywords, min_length, max_length)
+        prompt = self._create_seo_prompt(title, keywords, min_length, max_length, prompt_template)
         
         try:
             print("\n=== Making API Request ===")
@@ -140,6 +142,7 @@ class ArticleGenerator:
         keywords: List[str],
         min_length: Optional[int] = None,
         max_length: Optional[int] = None,
+        prompt_template: Optional[str] = None,
     ) -> str:
         """Create an SEO-optimized prompt for article generation.
         
@@ -148,6 +151,7 @@ class ArticleGenerator:
             keywords: List of keywords to include
             min_length: Minimum word length (optional)
             max_length: Maximum word length (optional)
+            prompt_template: Custom prompt template to use (optional)
             
         Returns:
             The formatted prompt string
@@ -155,6 +159,16 @@ class ArticleGenerator:
         min_length = min_length or int(os.getenv("MIN_ARTICLE_LENGTH", "1200"))
         max_length = max_length or int(os.getenv("MAX_ARTICLE_LENGTH", "3000"))
         
+        if prompt_template:
+            # Use the provided template, replacing placeholders
+            return prompt_template.format(
+                title=title,
+                keywords=', '.join(keywords),
+                min_length=min_length,
+                max_length=max_length
+            )
+        
+        # Default SEO prompt template
         return f"""IMPORTANT: Generate an SEO-optimized article that MUST follow these EXACT formatting requirements.
 
 The article MUST start with this EXACT title:
