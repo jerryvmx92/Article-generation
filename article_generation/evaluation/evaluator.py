@@ -113,14 +113,14 @@ IMPORTANT: Format your response as a valid JSON object with the following struct
     "top_recommendations": ["..."]
 }}
 
-Make sure your response is ONLY the JSON object, with no additional text before or after."""
+Make sure your response is ONLY the JSON object, with no additional text before or after. Use double quotes for strings."""
 
         try:
             response = await self.client.messages.create(
                 model=self.model,
                 max_tokens=self.max_tokens,
                 temperature=self.temperature,
-                system="You are an expert content evaluator. Provide detailed, objective evaluations in JSON format only.",
+                system="You are an expert content evaluator. Provide detailed, objective evaluations in valid JSON format with double quotes for strings.",
                 messages=[{
                     "role": "user",
                     "content": prompt
@@ -136,10 +136,18 @@ Make sure your response is ONLY the JSON object, with no additional text before 
             except json.JSONDecodeError as e:
                 logger.error(f"Failed to parse evaluation response as JSON: {e}")
                 logger.error(f"Raw response: {content}")
-                return {
-                    "error": "Failed to parse evaluation response",
-                    "raw_response": content
-                }
+                
+                # Try to fix common JSON formatting issues
+                try:
+                    # Replace single quotes with double quotes
+                    fixed_content = content.replace("'", '"')
+                    evaluation = json.loads(fixed_content)
+                    return evaluation
+                except json.JSONDecodeError:
+                    return {
+                        "error": "Failed to parse evaluation response",
+                        "raw_response": content
+                    }
                 
         except Exception as e:
             logger.error(f"Evaluation failed: {e}")
