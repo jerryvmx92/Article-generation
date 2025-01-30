@@ -49,6 +49,9 @@ class ArticleGenerator:
             
         Returns:
             Dict containing the article title, content, keywords and evaluation results
+            
+        Raises:
+            Exception: If article generation fails
         """
         prompt = self._create_seo_prompt(title, keywords, min_length, max_length)
         
@@ -128,7 +131,8 @@ class ArticleGenerator:
                 metadata={"evaluation_attempted": False}
             )
             
-            raise e from None
+            # Re-raise the exception
+            raise
 
     def _create_seo_prompt(
         self,
