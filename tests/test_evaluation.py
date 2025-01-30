@@ -161,9 +161,9 @@ class TestArticleEvaluator:
         """Test article evaluation."""
         evaluator = ArticleEvaluator(api_key="test_key")
         
-        # Mock the API response
+        # Mock the API response with proper JSON formatting
         mock_response = MagicMock()
-        mock_response.content = [MagicMock(text=str(mock_evaluation))]
+        mock_response.content = [MagicMock(text=json.dumps(mock_evaluation))]  # Use json.dumps for proper formatting
         
         mock_messages = MagicMock()
         mock_messages.create = AsyncMock(return_value=mock_response)

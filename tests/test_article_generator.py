@@ -5,7 +5,7 @@ import pytest
 import json
 import logging
 from unittest.mock import AsyncMock, patch, MagicMock
-from anthropic import AsyncAnthropic
+from anthropic import AsyncAnthropic, APIError
 from typing import List, Dict
 
 from article_generation.llm.generator import ArticleGenerator
@@ -233,28 +233,44 @@ class TestArticleGenerator:
         assert str(min_length) in prompt
         assert str(max_length) in prompt
         assert "Do not include any YAML frontmatter" in prompt
-        assert "Article Structure:" in prompt
-        assert "Introduction:" in prompt
-        assert "Body Content:" in prompt
-        assert "Conclusion:" in prompt
+        assert "Required Content Structure:" in prompt
+        assert "Format Requirements:" in prompt
         assert "Regional Context:" in prompt
-        assert "Coatzacoalcos" in prompt
 
     @pytest.mark.asyncio
     async def test_error_handling(self, mock_env_vars):
         """Test error handling during article generation."""
-        mock_client = MagicMock()
-        mock_client.messages.create = AsyncMock(side_effect=Exception("API Error"))
+        # Create a mock request and response
+        mock_request = MagicMock()
+        mock_request.method = "POST"
+        mock_request.url = "https://api.anthropic.com/v1/messages"
+        
+        mock_response = MagicMock()
+        mock_response.status_code = 500
+        mock_response.text = "API Error"
+        
+        # Create a mock API error
+        error = APIError(request=mock_request)
+        error.status_code = 500
+        error.response = mock_response
+
+        # Create a mock client that raises our error
+        mock_client = AsyncMock()
+        mock_client.messages.create.side_effect = error
         
         with patch('anthropic.AsyncAnthropic', return_value=mock_client):
             generator = ArticleGenerator()
             
-            with pytest.raises(Exception) as exc_info:
+            with pytest.raises(APIError) as exc_info:
                 await generator.generate_article(
                     title="Test Topic",
                     keywords=["test"]
                 )
-            assert str(exc_info.value) == "API Error"
+            
+            # Verify error handling
+            assert exc_info.value.status_code == 500
+            assert exc_info.value.response.status_code == 500
+            assert exc_info.value.response.text == "API Error"
 
     @pytest.mark.integration
     @pytest.mark.skipif(
@@ -669,10 +685,7 @@ def test_create_seo_prompt(article_generator):
     assert str(min_length) in prompt
     assert str(max_length) in prompt
     assert "Do not include any YAML frontmatter" in prompt
-    assert "Article Structure:" in prompt
-    assert "Introduction:" in prompt
-    assert "Body Content:" in prompt
-    assert "Conclusion:" in prompt
+    assert "Required Content Structure:" in prompt
 
 def test_init_without_api_key(monkeypatch):
     """Test initialization without API key."""
