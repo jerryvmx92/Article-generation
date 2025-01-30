@@ -10,4 +10,9 @@ beautifulsoup4==4.12.3
 markdown==3.5.2
 urllib3==2.3.0
 fal-client==0.5.8
-loguru==0.7.2 
+loguru==0.7.2
+pandas==2.2.0
+numpy==1.26.3
+scipy==1.12.0
+plotly==5.18.0
+streamlit==1.31.0 
