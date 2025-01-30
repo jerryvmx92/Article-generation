@@ -32,3 +32,5 @@ mkdocs>=1.5.0  # Documentation generator
 mkdocs-material>=9.5.0  # Documentation theme
 markdown>=3.5.2  # Markdown support
 beautifulsoup4>=4.12.3  # HTML parsing 
+urllib3>=2.2.2 # not directly required, pinned by Snyk to avoid a vulnerability
+zipp>=3.19.1 # not directly required, pinned by Snyk to avoid a vulnerability
