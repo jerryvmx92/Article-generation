@@ -5,7 +5,7 @@ fastapi==0.109.0  # API framework
 uvicorn==0.25.0  # ASGI server
 pydantic==2.10.6  # Data validation
 httpx>=0.24.1  # HTTP client
-python-multipart==0.0.6  # File uploads
+python-multipart==0.0.22  # File uploads
 pillow==10.2.0  # Image processing
 fal-client==0.5.8  # Flux Pro API
 loguru==0.7.2  # Logging
